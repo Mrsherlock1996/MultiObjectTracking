@@ -13,30 +13,46 @@ string videoPath = "C:/Users/sherlock/Documents/multi-object-tracking/multi-obje
 int main() {
 	VideoCapture cap;
 	cap.open(videoPath);
-	Mat frame;
-	cap.read(frame);
-	frame = resizeFrame(frame);
 	if (!cap.isOpened()) {
 		cout << "no video loaded" << endl;
-		return -1;
+		return - 1;
 	}
-	showImage(frame, "frame");
+	Mat frame;
+	//cap.read(frame);
+	//resizeFrame(frame);
+	Ptr<MultiTracker> multi_trackers;
+	vector<Ptr<Tracker>> trackers;
+	vector<Rect2d> bboxes;
+	//bboxes.push_back(selectROI("frame", frame));
+	//trackers.push_back(TrackerKCF::create());
+	//showImage(frame, "frame");
+	char key = 'c';
 
-	Ptr<TrackerMIL> tracker = TrackerMIL::create();
-	Rect2d bbox = selectROI("frame", frame);
-
-	tracker->init(frame, bbox);
-	while(cap.read(frame)) {
+	while (cap.read(frame)) {
+		cap.read(frame);
+		if (!cap.read(frame)) {
+			cout << "no frame can be read" << endl;
+			break;
+		}
 		frame = resizeFrame(frame);
-		tracker->update(frame, bbox);
-		rectangle(frame, bbox, Scalar(0, 0, 255),1);
+		////multi_trackers->update(frame, bboxes);
+		for (int i = 0; i < bboxes.size(); i++) {
+			rectangle(frame, bboxes[i], Scalar(0, 0, 255), 1, 8);
+		}
 		showImage(frame, "frame");
-		if (waitKey(20) == 'q') {
+		key = waitKey(100);
+		if (key == 's') {
+			bboxes.push_back(selectROI("frame", frame,1,0));
+			trackers.push_back(TrackerKCF::create());
+			multi_trackers->add(trackers.at(trackers.size()-1), frame, bboxes.at(bboxes.size()-1));
+
+		}
+		if (key == 'q') {
 			break;
 		}
 	}
 	cap.release();
-	return 0;
+	
 }
 
 void showImage(Mat image, string name) {
@@ -48,7 +64,7 @@ Mat resizeFrame(Mat frame) {
 	double width = frame.cols;
 	double height = frame.rows;
 	double r = width / height;
-	double new_height = 600;
+	double new_height = 200;
 	double new_width = new_height * r;
 	resize(frame, new_frame, Size(new_width, new_height));
 	return new_frame;
