@@ -17,42 +17,31 @@ int main() {
 		cout << "no video loaded" << endl;
 		return - 1;
 	}
-	Mat frame;
-	//cap.read(frame);
-	//resizeFrame(frame);
-	Ptr<MultiTracker> multi_trackers;
-	vector<Ptr<Tracker>> trackers;
-	vector<Rect2d> bboxes;
-	//bboxes.push_back(selectROI("frame", frame));
-	//trackers.push_back(TrackerKCF::create());
-	//showImage(frame, "frame");
-	char key = 'c';
-
-	while (cap.read(frame)) {
-		cap.read(frame);
-		if (!cap.read(frame)) {
-			cout << "no frame can be read" << endl;
-			break;
-		}
-		frame = resizeFrame(frame);
-		////multi_trackers->update(frame, bboxes);
-		for (int i = 0; i < bboxes.size(); i++) {
-			rectangle(frame, bboxes[i], Scalar(0, 0, 255), 1, 8);
-		}
-		showImage(frame, "frame");
-		key = waitKey(100);
-		if (key == 's') {
-			bboxes.push_back(selectROI("frame", frame,1,0));
-			trackers.push_back(TrackerKCF::create());
-			multi_trackers->add(trackers.at(trackers.size()-1), frame, bboxes.at(bboxes.size()-1));
-
-		}
-		if (key == 'q') {
-			break;
-		}
-	}
-	cap.release();
-	
+    Mat frame;
+    cap >> frame;
+    vector<Rect> rois;
+    selectROIs("rois", frame, rois,false);
+    if (rois.size() < 1)
+        return 0;
+    MultiTracker trackers;
+    vector<Rect2d> obj;
+    vector<Ptr<Tracker>> algorithms;
+    for (auto i = 0; i < rois.size(); i++) {
+        obj.push_back(rois[i]);
+        algorithms.push_back(TrackerKCF::create());
+    }
+    trackers.add(algorithms, frame, obj);
+    while (cap.read(frame)) {
+        bool ok = trackers.update(frame);
+        if (ok) {
+            for (auto j = 0; j < trackers.getObjects().size(); j++) {
+                rectangle(frame, trackers.getObjects()[j], Scalar(255, 0, 0), 2, 1);
+            }
+            imshow("tracker", frame);
+        }
+        if (waitKey(1) == 27)break;
+    }
+    return 0;
 }
 
 void showImage(Mat image, string name) {
