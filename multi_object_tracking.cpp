@@ -26,7 +26,7 @@ int main() {
 	vector<Ptr<Tracker>> trackers;
 	vector<Rect> rois;
 	vector<Rect2d> boundingboxes;
-	selectROIs("frame", frame, rois, false,);
+	selectROIs("frame", frame, rois, false);
 	for (auto i = 0; i < rois.size(); i++) {
 		boundingboxes.push_back(rois[i]);
 		trackers.push_back(TrackerMIL::create());
